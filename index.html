@@ -20,7 +20,7 @@ body{
   box-shadow:0 10px 25px rgba(0,0,0,.08);
 }
 
-/* ===== الشعار ===== */
+/* الشعار */
 .logo{text-align:center;}
 .logo img{
   width:120px;height:120px;
@@ -35,7 +35,7 @@ body{
 }
 h2{text-align:center;margin:25px 0;font-size:28px;}
 
-/* ===== البحث ===== */
+/* البحث */
 .search-box{
   display:flex;
   gap:10px;
@@ -58,7 +58,7 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
   cursor:pointer;
 }
 
-/* ===== أزرار التصنيفات ===== */
+/* أزرار الأنواع */
 .filters{
   display:flex;
   flex-wrap:wrap;
@@ -75,13 +75,12 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
   cursor:pointer;
   font-size:14px;
 }
-.filters button.active,
 .filters button:hover{
   background:#0d6efd;
   color:#fff;
 }
 
-/* ===== النتائج ===== */
+/* النتائج */
 .result{margin-top:20px;}
 
 .card{
@@ -102,7 +101,7 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
   box-shadow:0 8px 20px rgba(0,0,0,.25);
 }
 
-/* ===== موبايل ===== */
+/* موبايل */
 @media(max-width:768px){
   .card{flex-direction:column;}
   .search-box{flex-direction:column;}
@@ -116,7 +115,7 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
 <div class="box">
 
   <div class="logo">
-    <img src="assets/alef.jpg">
+    <img src="./assets/alef.jpg" alt="شعار شركة الف">
     <div class="company-name">شركة الف لخدمات الدعاية والإعلام</div>
   </div>
 
@@ -128,7 +127,7 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
     <button onclick="load()">بحث</button>
   </div>
 
-  <!-- أزرار التصنيف -->
+  <!-- أزرار الأنواع -->
   <div class="filters">
     <button onclick="setType('')">الكل</button>
     <button onclick="setType('كمبيوتر مكتبي')">كمبيوتر مكتبي</button>
@@ -153,17 +152,17 @@ const SHEET_ID = "1rwrsnvKALSUMlmtp_9KOVE03-65niHv2-tBcOGbfmk4";
 const SHEET_NAME = "كشف الأجهزة";
 let currentType = "";
 
+/* استخراج FILE_ID وتحويله إلى رابط صورة */
+function driveImage(url){
+  if(!url) return "";
+  const match = url.match(/[-\w]{25,}/);
+  if(!match) return "";
+  return "https://lh3.googleusercontent.com/d/" + match[0];
+}
+
 function setType(type){
   currentType = type;
   load();
-}
-
-/* تحويل رابط Drive إلى رابط صورة */
-function driveImage(url){
-  if(!url) return "";
-  const id = url.match(/[-\w]{25,}/);
-  if(!id) return "";
-  return "https://lh3.googleusercontent.com/d/" + id[0];
 }
 
 window.onload = load;
@@ -188,7 +187,7 @@ async function load(){
     if(key && !deviceNo.toString().includes(key)) return;
     if(currentType && type !== currentType) return;
 
-    const img = driveImage(r.c[5]?.v);
+    const imgUrl = driveImage(r.c[5]?.v);
 
     box.innerHTML += `
     <div class="card">
@@ -204,7 +203,10 @@ async function load(){
       </div>
 
       <div class="card-image">
-        ${img ? `<img src="${img}">` : "<b>لا توجد صورة</b>"}
+        <img 
+          src="${imgUrl}" 
+          alt="صورة الجهاز"
+          onerror="this.onerror=null;this.src='./assets/no-image.png';">
       </div>
     </div>`;
   });
