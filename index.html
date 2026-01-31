@@ -19,8 +19,6 @@ body{
   border-radius:16px;
   box-shadow:0 10px 25px rgba(0,0,0,.08);
 }
-
-/* الشعار */
 .logo{text-align:center;}
 .logo img{
   width:120px;height:120px;
@@ -31,82 +29,49 @@ body{
   color:#0d6efd;
   font-weight:bold;
   margin-top:10px;
-  font-size:18px;
 }
-h2{text-align:center;margin:20px 0;font-size:28px;}
+h2{text-align:center;margin:20px 0;}
 
-/* العداد */
-.counters{
-  display:flex;
-  justify-content:center;
-  margin-bottom:20px;
-}
 .counter{
   background:#eef3ff;
-  padding:15px 30px;
+  padding:12px 30px;
   border-radius:14px;
   font-weight:bold;
-  font-size:18px;
+  width:max-content;
+  margin:15px auto;
 }
 
-/* البحث */
 .search-box{
   display:flex;
   gap:10px;
-  margin-bottom:15px;
 }
 .search-box input{
   flex:1;
-  padding:15px;
-  font-size:18px;
+  padding:14px;
   border-radius:10px;
   border:1px solid #ccc;
 }
 .search-box button{
-  padding:15px 30px;
-  font-size:18px;
+  padding:14px 30px;
   border-radius:10px;
   background:#0d6efd;
   color:#fff;
   border:none;
-  cursor:pointer;
 }
 
-/* أزرار الأنواع */
-.filters{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-bottom:25px;
-  justify-content:center;
-}
-.filters button{
-  padding:10px 18px;
-  border-radius:20px;
-  border:1px solid #0d6efd;
-  background:#fff;
-  color:#0d6efd;
-  cursor:pointer;
-}
-.filters button:hover{
-  background:#0d6efd;
-  color:#fff;
-}
-
-/* الكروت */
 .card{
   display:flex;
   gap:30px;
   border-radius:16px;
   padding:20px;
-  margin-bottom:20px;
+  margin-top:20px;
   background:#fafafa;
   border:3px solid;
 }
-.ok{border-color:#28a745;}
-.late{border-color:#dc3545;}
+.card.ok{border-color:#28a745;}
+.card.late{border-color:#dc3545;}
 
-.card-text{flex:2;line-height:1.9;font-size:16px;}
+.card-text{flex:2;line-height:2;}
 .card-image{flex:1;}
 .card-image img{
   width:100%;
@@ -114,27 +79,18 @@ h2{text-align:center;margin:20px 0;font-size:28px;}
   border-radius:14px;
 }
 
-.print-btn{
-  margin-top:10px;
-  padding:8px 15px;
-  background:#444;
-  color:#fff;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-}
+.status.ok{color:#28a745;font-weight:bold;}
+.status.late{color:#dc3545;font-weight:bold;}
 
 .no-results{
   text-align:center;
-  font-size:22px;
   color:#dc3545;
+  font-size:20px;
   margin-top:30px;
 }
 
-/* موبايل */
 @media(max-width:768px){
   .card{flex-direction:column;}
-  .search-box{flex-direction:column;}
 }
 </style>
 </head>
@@ -150,31 +106,11 @@ h2{text-align:center;margin:20px 0;font-size:28px;}
 
   <h2>📋 كشف أجهزة الشركة</h2>
 
-  <!-- العداد -->
-  <div class="counters">
-    <div class="counter" id="countAll">الإجمالي: 0</div>
-  </div>
+  <div class="counter" id="countAll">الإجمالي: 0</div>
 
-  <!-- البحث -->
   <div class="search-box">
     <input id="search" placeholder="رقم الجهاز (اتركه فارغًا لعرض الكل)">
     <button onclick="load()">بحث</button>
-  </div>
-
-  <!-- أزرار البحث -->
-  <div class="filters">
-    <button onclick="setType('')">الكل</button>
-    <button onclick="setType('كمبيوتر مكتبي')">كمبيوتر مكتبي</button>
-    <button onclick="setType('لابتوب')">لابتوب</button>
-    <button onclick="setType('طابعة')">طابعات</button>
-    <button onclick="setType('هاتف أرضي')">هاتف أرضي</button>
-    <button onclick="setType('موبايل')">موبايل</button>
-    <button onclick="setType('كاميرا')">كاميرات</button>
-    <button onclick="setType('سيارة')">سيارات</button>
-    <button onclick="setType('مكيف')">مكيفات</button>
-    <button onclick="setType('ساعة')">ساعات</button>
-    <button onclick="setType('ثلاجة')">ثلاجات</button>
-    <button onclick="setType('انترنت')">انترنت</button>
   </div>
 
   <div id="result"></div>
@@ -184,9 +120,19 @@ h2{text-align:center;margin:20px 0;font-size:28px;}
 <script>
 const SHEET_ID = "1rwrsnvKALSUMlmtp_9KOVE03-65niHv2-tBcOGbfmk4";
 const SHEET_NAME = "كشف الأجهزة";
-let currentType = "";
 
-function setType(t){ currentType=t; load(); }
+function parseDate(str){
+  if(!str) return null;
+  const p = str.split("-");
+  return new Date(p[0], p[1]-1, p[2]);
+}
+
+function driveToImage(url){
+  if(!url) return "";
+  const match = url.match(/[-\w]{25,}/);
+  return match ? `https://drive.google.com/uc?export=view&id=${match[0]}` : "";
+}
+
 window.onload = load;
 
 async function load(){
@@ -202,32 +148,47 @@ async function load(){
   const json = JSON.parse((await res.text()).substring(47).slice(0,-2));
   const rows = json.table.rows;
 
-  rows.forEach((r,i)=>{
-    const no = r.c[0]?.v ?? "";
-    const type = r.c[1]?.v ?? "";
+  rows.forEach(r=>{
+    const deviceNo  = r.c[0]?.v ?? "";
+    const type      = r.c[1]?.v ?? "";
+    const name      = r.c[2]?.v ?? "";
+    const desc      = r.c[3]?.v ?? "";
+    const place     = r.c[4]?.v ?? "";
+    const rawImage  = r.c[5]?.v || r.c[5]?.f || "";
+    const imageUrl  = driveToImage(rawImage);
+    const lastCheck = r.c[6]?.f ?? "";
     const nextCheck = r.c[7]?.f ?? "";
 
     total++;
 
-    if(key && !no.includes(key)) return;
-    if(currentType && type !== currentType) return;
-
+    if(key && !deviceNo.includes(key)) return;
     shown++;
 
     const today = new Date();
-    const checkDate = nextCheck ? new Date(nextCheck) : null;
-    const status = checkDate && checkDate < today ? "late" : "ok";
+    today.setHours(0,0,0,0);
+
+    const nextDate = parseDate(nextCheck);
+    const late = nextDate && nextDate < today;
 
     box.innerHTML += `
-    <div class="card ${status}" id="print-${i}">
+    <div class="card ${late?'late':'ok'}">
       <div class="card-text">
-        <b>رقم الجهاز:</b> ${no}<br>
+        <b>رقم الجهاز:</b> ${deviceNo}<br>
         <b>النوع:</b> ${type}<br>
-        <b>الاسم:</b> ${r.c[2]?.v ?? ""}<br>
-        <b>المكان:</b> ${r.c[4]?.v ?? ""}<br>
+        <b>الاسم:</b> ${name}<br>
+        <b>الوصف:</b> ${desc}<br>
+        <b>المكان:</b> ${place}<br>
+        <b>تاريخ آخر فحص:</b> ${lastCheck}<br>
         <b>تاريخ الفحص القادم:</b> ${nextCheck}<br>
-        <button class="print-btn" onclick="printCard('print-${i}')">🖨️ طباعة تقرير الجهاز</button>
+        <b>الحالة:</b>
+        <span class="status ${late?'late':'ok'}">
+          ${late ? '🔴 متأخر' : '🟢 سليم'}
+        </span>
       </div>
+      ${imageUrl ? `
+      <div class="card-image">
+        <img src="${imageUrl}" referrerpolicy="no-referrer">
+      </div>` : ``}
     </div>`;
   });
 
@@ -236,14 +197,6 @@ async function load(){
   if(shown === 0){
     box.innerHTML = `<div class="no-results">❌ لا توجد أجهزة مطابقة لبحثك</div>`;
   }
-}
-
-function printCard(id){
-  const content = document.getElementById(id).innerHTML;
-  const w = window.open("", "", "width=900,height=700");
-  w.document.write(content);
-  w.print();
-  w.close();
 }
 </script>
 
