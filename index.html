@@ -58,7 +58,7 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
   cursor:pointer;
 }
 
-/* أزرار الأنواع */
+/* الأزرار */
 .filters{
   display:flex;
   flex-wrap:wrap;
@@ -73,7 +73,6 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
   background:#fff;
   color:#0d6efd;
   cursor:pointer;
-  font-size:14px;
 }
 .filters button:hover{
   background:#0d6efd;
@@ -82,7 +81,6 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
 
 /* النتائج */
 .result{margin-top:20px;}
-
 .card{
   display:flex;
   gap:30px;
@@ -152,12 +150,22 @@ const SHEET_ID = "1rwrsnvKALSUMlmtp_9KOVE03-65niHv2-tBcOGbfmk4";
 const SHEET_NAME = "كشف الأجهزة";
 let currentType = "";
 
-/* استخراج FILE_ID وتحويله إلى رابط صورة */
+/* استخراج FILE_ID من أي رابط Drive */
 function driveImage(url){
   if(!url) return "";
-  const match = url.match(/[-\w]{25,}/);
-  if(!match) return "";
-  return "https://lh3.googleusercontent.com/d/" + match[0];
+  const m = url.match(/[-\w]{25,}/);
+  return m ? "https://lh3.googleusercontent.com/d/" + m[0] : "";
+}
+
+/* رسم الصورة بشكل آمن */
+function renderImage(url){
+  if(!url){
+    return `<img src="./assets/no-image.png" alt="لا توجد صورة">`;
+  }
+  return `
+    <img src="${url}" alt="صورة الجهاز"
+      onerror="this.onerror=null;this.src='./assets/no-image.png';">
+  `;
 }
 
 function setType(type){
@@ -201,12 +209,8 @@ async function load(){
         <b>تاريخ الفحص القادم:</b> ${r.c[7]?.f ?? ""}<br>
         <b>الملاحظات:</b> ${r.c[8]?.v ?? ""}
       </div>
-
       <div class="card-image">
-        <img 
-          src="${imgUrl}" 
-          alt="صورة الجهاز"
-          onerror="this.onerror=null;this.src='./assets/no-image.png';">
+        ${renderImage(imgUrl)}
       </div>
     </div>`;
   });
