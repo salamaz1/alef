@@ -40,6 +40,7 @@ h2{margin:20px 0}
 .search{
   display:flex;
   gap:10px;
+  margin-bottom:15px;
 }
 .search input{
   flex:1;
@@ -53,6 +54,27 @@ h2{margin:20px 0}
   background:#0d6efd;
   color:#fff;
   border:none;
+}
+
+.filters{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:center;
+  margin-bottom:20px;
+}
+.filters button{
+  padding:8px 18px;
+  border-radius:20px;
+  border:1px solid #0d6efd;
+  background:#fff;
+  color:#0d6efd;
+  cursor:pointer;
+}
+.filters button.active,
+.filters button:hover{
+  background:#0d6efd;
+  color:#fff;
 }
 
 .card{
@@ -105,6 +127,17 @@ h2{margin:20px 0}
     <button onclick="loadData()">بحث</button>
   </div>
 
+  <!-- أزرار التصنيف -->
+  <div class="filters">
+    <button onclick="setFilter('')" class="active">الكل</button>
+    <button onclick="setFilter('كمبيوتر مكتبي')">كمبيوتر مكتبي</button>
+    <button onclick="setFilter('لابتوب')">لابتوب</button>
+    <button onclick="setFilter('طابعات')">طابعات</button>
+    <button onclick="setFilter('هواتف')">هواتف</button>
+    <button onclick="setFilter('كاميرات')">كاميرات</button>
+    <button onclick="setFilter('سيارات')">سيارات</button>
+  </div>
+
   <div id="cards"></div>
 
 </div>
@@ -112,6 +145,14 @@ h2{margin:20px 0}
 <script>
 const SHEET_ID = "1rwrsnvKALSUMlmtp_9KOVE03-65niHv2-tBcOGbfmk4";
 const SHEET_NAME = "كشف الأجهزة";
+let currentFilter = "";
+
+function setFilter(type){
+  currentFilter = type;
+  document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
+  event.target.classList.add("active");
+  loadData();
+}
 
 function parseDate(str){
   if(!str) return null;
@@ -135,12 +176,12 @@ async function loadData(){
   let shown = 0;
 
   rows.forEach(r=>{
-    const deviceNo  = r.c[0]?.v ?? "";
+    const deviceNo  = r.c[0]?.f ?? r.c[0]?.v ?? "";
     const type      = r.c[1]?.v ?? "";
     const name      = r.c[2]?.v ?? "";
     const desc      = r.c[3]?.v ?? "";
     const place     = r.c[4]?.v ?? "";
-    const imageUrl  = r.c[5]?.v ?? "";
+    const imageUrl  = (r.c[5]?.v ?? "").trim();
     const lastCheck = r.c[6]?.f ?? "";
     const nextCheck = r.c[7]?.f ?? "";
 
@@ -148,6 +189,8 @@ async function loadData(){
     total++;
 
     if(key && !String(deviceNo).includes(key)) return;
+    if(currentFilter && type !== currentFilter) return;
+
     shown++;
 
     const today = new Date();
@@ -171,10 +214,11 @@ async function loadData(){
           </span>
         </div>
 
-        ${imageUrl ? `
-        <div>
-          <img src="${imageUrl}" alt="صورة الجهاز">
-        </div>` : ``}
+        ${
+          imageUrl.startsWith("http")
+          ? `<div><img src="${imageUrl}" alt="صورة الجهاز"></div>`
+          : ``
+        }
       </div>
     `;
   });
