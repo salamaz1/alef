@@ -11,7 +11,7 @@ body{
   background:#f4f6f8;
   padding:15px;
 }
-.box{
+.container{
   background:#fff;
   padding:30px;
   max-width:1300px;
@@ -19,18 +19,14 @@ body{
   border-radius:16px;
   box-shadow:0 10px 25px rgba(0,0,0,.08);
 }
-.logo{text-align:center;}
-.logo img{
+.header{text-align:center}
+.header img{
   width:120px;height:120px;
   border-radius:50%;
   border:3px solid #0d6efd;
 }
-.company-name{
-  color:#0d6efd;
-  font-weight:bold;
-  margin-top:10px;
-}
-h2{text-align:center;margin:20px 0;}
+.company{color:#0d6efd;font-weight:bold;margin-top:10px}
+h2{margin:20px 0}
 
 .counter{
   background:#eef3ff;
@@ -41,17 +37,17 @@ h2{text-align:center;margin:20px 0;}
   margin:15px auto;
 }
 
-.search-box{
+.search{
   display:flex;
   gap:10px;
 }
-.search-box input{
+.search input{
   flex:1;
   padding:14px;
   border-radius:10px;
   border:1px solid #ccc;
 }
-.search-box button{
+.search button{
   padding:14px 30px;
   border-radius:10px;
   background:#0d6efd;
@@ -62,25 +58,22 @@ h2{text-align:center;margin:20px 0;}
 .card{
   display:flex;
   gap:30px;
-  border-radius:16px;
   padding:20px;
   margin-top:20px;
-  background:#fafafa;
+  border-radius:16px;
   border:3px solid;
+  background:#fafafa;
 }
-.card.ok{border-color:#28a745;}
-.card.late{border-color:#dc3545;}
+.card.ok{border-color:#28a745}
+.card.late{border-color:#dc3545}
 
-.card-text{flex:2;line-height:2;}
-.card-image{flex:1;}
-.card-image img{
-  width:100%;
+.card img{
   max-width:320px;
   border-radius:14px;
 }
 
-.status.ok{color:#28a745;font-weight:bold;}
-.status.late{color:#dc3545;font-weight:bold;}
+.status.ok{color:#28a745;font-weight:bold}
+.status.late{color:#dc3545;font-weight:bold}
 
 .no-results{
   text-align:center;
@@ -90,30 +83,29 @@ h2{text-align:center;margin:20px 0;}
 }
 
 @media(max-width:768px){
-  .card{flex-direction:column;}
+  .card{flex-direction:column}
 }
 </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="container">
 
-  <div class="logo">
+  <div class="header">
     <img src="./assets/alef.jpg">
-    <div class="company-name">شركة الف لخدمات الدعاية والإعلام</div>
+    <div class="company">شركة الف لخدمات الدعاية والإعلام</div>
+    <h2>📋 كشف أجهزة الشركة</h2>
   </div>
 
-  <h2>📋 كشف أجهزة الشركة</h2>
+  <div class="counter" id="totalCount">الإجمالي: 0</div>
 
-  <div class="counter" id="countAll">الإجمالي: 0</div>
-
-  <div class="search-box">
-    <input id="search" placeholder="رقم الجهاز (اتركه فارغًا لعرض الكل)">
-    <button onclick="load()">بحث</button>
+  <div class="search">
+    <input id="searchInput" placeholder="رقم الجهاز (اتركه فارغًا لعرض الكل)">
+    <button onclick="loadData()">بحث</button>
   </div>
 
-  <div id="result"></div>
+  <div id="cards"></div>
 
 </div>
 
@@ -127,26 +119,20 @@ function parseDate(str){
   return new Date(p[0], p[1]-1, p[2]);
 }
 
-function driveToImage(url){
-  if(!url) return "";
-  const match = url.match(/[-\w]{25,}/);
-  return match ? `https://drive.google.com/uc?export=view&id=${match[0]}` : "";
-}
+window.onload = loadData;
 
-window.onload = load;
-
-async function load(){
-  const key = search.value.trim();
-  const box = document.getElementById("result");
+async function loadData(){
+  const key = document.getElementById("searchInput").value.trim();
+  const box = document.getElementById("cards");
   box.innerHTML = "";
-
-  let total = 0;
-  let shown = 0;
 
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_NAME)}`;
   const res = await fetch(url);
   const json = JSON.parse((await res.text()).substring(47).slice(0,-2));
   const rows = json.table.rows;
+
+  let total = 0;
+  let shown = 0;
 
   rows.forEach(r=>{
     const deviceNo  = r.c[0]?.v ?? "";
@@ -154,45 +140,46 @@ async function load(){
     const name      = r.c[2]?.v ?? "";
     const desc      = r.c[3]?.v ?? "";
     const place     = r.c[4]?.v ?? "";
-    const rawImage  = r.c[5]?.v || r.c[5]?.f || "";
-    const imageUrl  = driveToImage(rawImage);
+    const imageUrl  = r.c[5]?.v ?? "";
     const lastCheck = r.c[6]?.f ?? "";
     const nextCheck = r.c[7]?.f ?? "";
 
+    if(!deviceNo) return;
     total++;
 
-    if(key && !deviceNo.includes(key)) return;
+    if(key && !String(deviceNo).includes(key)) return;
     shown++;
 
     const today = new Date();
     today.setHours(0,0,0,0);
-
     const nextDate = parseDate(nextCheck);
     const late = nextDate && nextDate < today;
 
     box.innerHTML += `
-    <div class="card ${late?'late':'ok'}">
-      <div class="card-text">
-        <b>رقم الجهاز:</b> ${deviceNo}<br>
-        <b>النوع:</b> ${type}<br>
-        <b>الاسم:</b> ${name}<br>
-        <b>الوصف:</b> ${desc}<br>
-        <b>المكان:</b> ${place}<br>
-        <b>تاريخ آخر فحص:</b> ${lastCheck}<br>
-        <b>تاريخ الفحص القادم:</b> ${nextCheck}<br>
-        <b>الحالة:</b>
-        <span class="status ${late?'late':'ok'}">
-          ${late ? '🔴 متأخر' : '🟢 سليم'}
-        </span>
+      <div class="card ${late?'late':'ok'}">
+        <div style="flex:2;line-height:2">
+          <b>رقم الجهاز:</b> ${deviceNo}<br>
+          <b>النوع:</b> ${type}<br>
+          <b>الاسم:</b> ${name}<br>
+          <b>الوصف:</b> ${desc}<br>
+          <b>المكان:</b> ${place}<br>
+          <b>تاريخ آخر فحص:</b> ${lastCheck}<br>
+          <b>تاريخ الفحص القادم:</b> ${nextCheck}<br>
+          <b>الحالة:</b>
+          <span class="status ${late?'late':'ok'}">
+            ${late ? '🔴 متأخر' : '🟢 سليم'}
+          </span>
+        </div>
+
+        ${imageUrl ? `
+        <div>
+          <img src="${imageUrl}" alt="صورة الجهاز">
+        </div>` : ``}
       </div>
-      ${imageUrl ? `
-      <div class="card-image">
-        <img src="${imageUrl}" referrerpolicy="no-referrer">
-      </div>` : ``}
-    </div>`;
+    `;
   });
 
-  document.getElementById("countAll").innerText = `الإجمالي: ${total}`;
+  document.getElementById("totalCount").innerText = `الإجمالي: ${total}`;
 
   if(shown === 0){
     box.innerHTML = `<div class="no-results">❌ لا توجد أجهزة مطابقة لبحثك</div>`;
