@@ -129,7 +129,7 @@ h2{margin:20px 0}
 
   <!-- أزرار التصنيف -->
   <div class="filters">
-    <button onclick="setFilter('')" class="active">الكل</button>
+    <button class="active" onclick="setFilter('')">الكل</button>
     <button onclick="setFilter('كمبيوتر مكتبي')">كمبيوتر مكتبي</button>
     <button onclick="setFilter('لابتوب')">لابتوب</button>
     <button onclick="setFilter('طابعات')">طابعات</button>
@@ -147,17 +147,29 @@ const SHEET_ID = "1rwrsnvKALSUMlmtp_9KOVE03-65niHv2-tBcOGbfmk4";
 const SHEET_NAME = "كشف الأجهزة";
 let currentFilter = "";
 
+/* ✅ استخراج الرابط سواء كان نص أو Hyperlink */
+function extractUrl(cell){
+  if(!cell) return "";
+  if(cell.v && typeof cell.v === "string") return cell.v.trim();
+  if(cell.f){
+    const m = cell.f.match(/href="([^"]+)"/);
+    return m ? m[1] : "";
+  }
+  return "";
+}
+
+/* تحليل تاريخ */
+function parseDate(str){
+  if(!str) return null;
+  const p = str.split("-");
+  return new Date(p[0], p[1]-1, p[2]);
+}
+
 function setFilter(type){
   currentFilter = type;
   document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
   event.target.classList.add("active");
   loadData();
-}
-
-function parseDate(str){
-  if(!str) return null;
-  const p = str.split("-");
-  return new Date(p[0], p[1]-1, p[2]);
 }
 
 window.onload = loadData;
@@ -181,7 +193,7 @@ async function loadData(){
     const name      = r.c[2]?.v ?? "";
     const desc      = r.c[3]?.v ?? "";
     const place     = r.c[4]?.v ?? "";
-    const imageUrl  = (r.c[5]?.v ?? "").trim();
+    const imageUrl  = extractUrl(r.c[5]);   // ✅ الحل النهائي للصور
     const lastCheck = r.c[6]?.f ?? "";
     const nextCheck = r.c[7]?.f ?? "";
 
@@ -215,7 +227,7 @@ async function loadData(){
         </div>
 
         ${
-          imageUrl.startsWith("http")
+          imageUrl
           ? `<div><img src="${imageUrl}" alt="صورة الجهاز"></div>`
           : ``
         }
