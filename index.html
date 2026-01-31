@@ -14,7 +14,7 @@ body{
 .box{
   background:#fff;
   padding:30px;
-  max-width:1200px;
+  max-width:1300px;
   margin:auto;
   border-radius:16px;
   box-shadow:0 10px 25px rgba(0,0,0,.08);
@@ -33,7 +33,22 @@ body{
   margin-top:10px;
   font-size:18px;
 }
-h2{text-align:center;margin:25px 0;font-size:28px;}
+h2{text-align:center;margin:20px 0;font-size:28px;}
+
+/* العدادات */
+.counters{
+  display:flex;
+  gap:15px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.counter{
+  background:#f1f5ff;
+  padding:15px 25px;
+  border-radius:12px;
+  font-weight:bold;
+}
 
 /* البحث */
 .search-box{
@@ -58,7 +73,7 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
   cursor:pointer;
 }
 
-/* أزرار الأنواع */
+/* الأزرار */
 .filters{
   display:flex;
   flex-wrap:wrap;
@@ -79,31 +94,48 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
   color:#fff;
 }
 
-/* النتائج */
-.result{margin-top:20px;}
+/* الكروت */
 .card{
   display:flex;
   gap:30px;
-  border:1px solid #ddd;
   border-radius:16px;
   padding:20px;
   margin-bottom:20px;
   background:#fafafa;
+  border:3px solid;
 }
+.ok{border-color:#28a745;}
+.late{border-color:#dc3545;}
+
 .card-text{flex:2;line-height:1.9;font-size:16px;}
 .card-image{flex:1;}
 .card-image img{
   width:100%;
-  max-width:340px;
+  max-width:320px;
   border-radius:14px;
-  box-shadow:0 8px 20px rgba(0,0,0,.25);
+}
+
+.print-btn{
+  margin-top:10px;
+  padding:8px 15px;
+  background:#444;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.no-results{
+  text-align:center;
+  font-size:22px;
+  color:#dc3545;
+  margin-top:30px;
 }
 
 /* موبايل */
 @media(max-width:768px){
   .card{flex-direction:column;}
   .search-box{flex-direction:column;}
-  .search-box button{width:100%;}
 }
 </style>
 </head>
@@ -113,11 +145,19 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
 <div class="box">
 
   <div class="logo">
-    <img src="./assets/alef.jpg" alt="شعار شركة الف">
+    <img src="./assets/alef.jpg">
     <div class="company-name">شركة الف لخدمات الدعاية والإعلام</div>
   </div>
 
   <h2>📋 كشف أجهزة الشركة</h2>
+
+  <!-- العدادات -->
+  <div class="counters">
+    <div class="counter" id="countAll">الإجمالي: 0</div>
+    <div class="counter" id="countPC">كمبيوترات: 0</div>
+    <div class="counter" id="countPrinter">طابعات: 0</div>
+    <div class="counter" id="countCar">سيارات: 0</div>
+  </div>
 
   <!-- البحث -->
   <div class="search-box">
@@ -125,23 +165,15 @@ h2{text-align:center;margin:25px 0;font-size:28px;}
     <button onclick="load()">بحث</button>
   </div>
 
-  <!-- أزرار الأنواع -->
+  <!-- الأنواع -->
   <div class="filters">
     <button onclick="setType('')">الكل</button>
     <button onclick="setType('كمبيوتر مكتبي')">كمبيوتر مكتبي</button>
-    <button onclick="setType('لابتوب')">لابتوب</button>
     <button onclick="setType('طابعة')">طابعات</button>
-    <button onclick="setType('هاتف أرضي')">هاتف أرضي</button>
-    <button onclick="setType('موبايل')">موبايل</button>
-    <button onclick="setType('كاميرا')">كاميرات</button>
     <button onclick="setType('سيارة')">سيارات</button>
-    <button onclick="setType('مكيف')">مكيفات</button>
-    <button onclick="setType('ساعة')">ساعات</button>
-    <button onclick="setType('ثلاجة')">ثلاجات</button>
-    <button onclick="setType('انترنت')">انترنت</button>
   </div>
 
-  <div class="result" id="result"></div>
+  <div id="result"></div>
 
 </div>
 
@@ -150,71 +182,71 @@ const SHEET_ID = "1rwrsnvKALSUMlmtp_9KOVE03-65niHv2-tBcOGbfmk4";
 const SHEET_NAME = "كشف الأجهزة";
 let currentType = "";
 
-/* استخراج رابط الصورة من Google Drive */
-function driveImage(url){
-  if(!url) return "";
-  const m = url.match(/[-\w]{25,}/);
-  return m ? "https://lh3.googleusercontent.com/d/" + m[0] : "";
-}
-
-/* عرض الصورة فقط إذا كانت موجودة */
-function renderImage(url){
-  if(!url) return "";
-  return `
-    <img 
-      src="${url}" 
-      alt="صورة الجهاز"
-      onerror="this.style.display='none'">
-  `;
-}
-
-function setType(type){
-  currentType = type;
-  load();
-}
+function setType(t){currentType=t;load();}
 
 window.onload = load;
 
 async function load(){
-  const key = document.getElementById("search").value.trim();
+  const key = search.value.trim();
   const box = document.getElementById("result");
-  box.innerHTML = "جاري تحميل البيانات...";
+  box.innerHTML = "";
+
+  let total=0, pc=0, printer=0, car=0;
+  let shown = 0;
 
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_NAME)}`;
   const res = await fetch(url);
-  const text = await res.text();
-  const json = JSON.parse(text.substring(47).slice(0,-2));
+  const json = JSON.parse((await res.text()).substring(47).slice(0,-2));
   const rows = json.table.rows;
 
-  box.innerHTML = "";
-
   rows.forEach(r=>{
-    const deviceNo = r.c[0]?.f ?? r.c[0]?.v ?? "";
+    const no = r.c[0]?.v ?? "";
     const type = r.c[1]?.v ?? "";
+    const nextCheck = r.c[7]?.f ?? "";
 
-    if(key && !deviceNo.toString().includes(key)) return;
-    if(currentType && type !== currentType) return;
+    total++;
+    if(type.includes("كمبيوتر")) pc++;
+    if(type.includes("طابعة")) printer++;
+    if(type.includes("سيارة")) car++;
 
-    const imgUrl = driveImage(r.c[5]?.v);
+    if(key && !no.includes(key)) return;
+    if(currentType && type!==currentType) return;
+
+    shown++;
+
+    const today = new Date();
+    const checkDate = nextCheck ? new Date(nextCheck) : null;
+    const status = checkDate && checkDate < today ? "late" : "ok";
 
     box.innerHTML += `
-    <div class="card">
+    <div class="card ${status}" id="print-${shown}">
       <div class="card-text">
-        <b>رقم الجهاز:</b> ${deviceNo}<br>
+        <b>رقم الجهاز:</b> ${no}<br>
         <b>النوع:</b> ${type}<br>
         <b>الاسم:</b> ${r.c[2]?.v ?? ""}<br>
-        <b>الوصف:</b> ${r.c[3]?.v ?? ""}<br>
         <b>المكان:</b> ${r.c[4]?.v ?? ""}<br>
-        <b>تاريخ آخر فحص:</b> ${r.c[6]?.f ?? ""}<br>
-        <b>تاريخ الفحص القادم:</b> ${r.c[7]?.f ?? ""}<br>
-        <b>الملاحظات:</b> ${r.c[8]?.v ?? ""}
-      </div>
-
-      <div class="card-image">
-        ${renderImage(imgUrl)}
+        <b>تاريخ الفحص القادم:</b> ${nextCheck}<br>
+        <button class="print-btn" onclick="printCard('print-${shown}')">🖨️ طباعة تقرير الجهاز</button>
       </div>
     </div>`;
   });
+
+  countAll.innerText = `الإجمالي: ${total}`;
+  countPC.innerText = `كمبيوترات: ${pc}`;
+  countPrinter.innerText = `طابعات: ${printer}`;
+  countCar.innerText = `سيارات: ${car}`;
+
+  if(shown===0){
+    box.innerHTML = `<div class="no-results">❌ لا توجد أجهزة مطابقة لبحثك</div>`;
+  }
+}
+
+function printCard(id){
+  const content = document.getElementById(id).innerHTML;
+  const w = window.open("", "", "width=900,height=700");
+  w.document.write(content);
+  w.print();
+  w.close();
 }
 </script>
 
