@@ -35,19 +35,18 @@ body{
 }
 h2{text-align:center;margin:20px 0;font-size:28px;}
 
-/* العدادات */
+/* العداد */
 .counters{
   display:flex;
-  gap:15px;
   justify-content:center;
-  flex-wrap:wrap;
   margin-bottom:20px;
 }
 .counter{
-  background:#f1f5ff;
-  padding:15px 25px;
-  border-radius:12px;
+  background:#eef3ff;
+  padding:15px 30px;
+  border-radius:14px;
   font-weight:bold;
+  font-size:18px;
 }
 
 /* البحث */
@@ -73,7 +72,7 @@ h2{text-align:center;margin:20px 0;font-size:28px;}
   cursor:pointer;
 }
 
-/* الأزرار */
+/* أزرار الأنواع */
 .filters{
   display:flex;
   flex-wrap:wrap;
@@ -151,12 +150,9 @@ h2{text-align:center;margin:20px 0;font-size:28px;}
 
   <h2>📋 كشف أجهزة الشركة</h2>
 
-  <!-- العدادات -->
+  <!-- العداد -->
   <div class="counters">
     <div class="counter" id="countAll">الإجمالي: 0</div>
-    <div class="counter" id="countPC">كمبيوترات: 0</div>
-    <div class="counter" id="countPrinter">طابعات: 0</div>
-    <div class="counter" id="countCar">سيارات: 0</div>
   </div>
 
   <!-- البحث -->
@@ -165,12 +161,20 @@ h2{text-align:center;margin:20px 0;font-size:28px;}
     <button onclick="load()">بحث</button>
   </div>
 
-  <!-- الأنواع -->
+  <!-- أزرار البحث -->
   <div class="filters">
     <button onclick="setType('')">الكل</button>
     <button onclick="setType('كمبيوتر مكتبي')">كمبيوتر مكتبي</button>
+    <button onclick="setType('لابتوب')">لابتوب</button>
     <button onclick="setType('طابعة')">طابعات</button>
+    <button onclick="setType('هاتف أرضي')">هاتف أرضي</button>
+    <button onclick="setType('موبايل')">موبايل</button>
+    <button onclick="setType('كاميرا')">كاميرات</button>
     <button onclick="setType('سيارة')">سيارات</button>
+    <button onclick="setType('مكيف')">مكيفات</button>
+    <button onclick="setType('ساعة')">ساعات</button>
+    <button onclick="setType('ثلاجة')">ثلاجات</button>
+    <button onclick="setType('انترنت')">انترنت</button>
   </div>
 
   <div id="result"></div>
@@ -182,8 +186,7 @@ const SHEET_ID = "1rwrsnvKALSUMlmtp_9KOVE03-65niHv2-tBcOGbfmk4";
 const SHEET_NAME = "كشف الأجهزة";
 let currentType = "";
 
-function setType(t){currentType=t;load();}
-
+function setType(t){ currentType=t; load(); }
 window.onload = load;
 
 async function load(){
@@ -191,7 +194,7 @@ async function load(){
   const box = document.getElementById("result");
   box.innerHTML = "";
 
-  let total=0, pc=0, printer=0, car=0;
+  let total = 0;
   let shown = 0;
 
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_NAME)}`;
@@ -199,18 +202,15 @@ async function load(){
   const json = JSON.parse((await res.text()).substring(47).slice(0,-2));
   const rows = json.table.rows;
 
-  rows.forEach(r=>{
+  rows.forEach((r,i)=>{
     const no = r.c[0]?.v ?? "";
     const type = r.c[1]?.v ?? "";
     const nextCheck = r.c[7]?.f ?? "";
 
     total++;
-    if(type.includes("كمبيوتر")) pc++;
-    if(type.includes("طابعة")) printer++;
-    if(type.includes("سيارة")) car++;
 
     if(key && !no.includes(key)) return;
-    if(currentType && type!==currentType) return;
+    if(currentType && type !== currentType) return;
 
     shown++;
 
@@ -219,24 +219,21 @@ async function load(){
     const status = checkDate && checkDate < today ? "late" : "ok";
 
     box.innerHTML += `
-    <div class="card ${status}" id="print-${shown}">
+    <div class="card ${status}" id="print-${i}">
       <div class="card-text">
         <b>رقم الجهاز:</b> ${no}<br>
         <b>النوع:</b> ${type}<br>
         <b>الاسم:</b> ${r.c[2]?.v ?? ""}<br>
         <b>المكان:</b> ${r.c[4]?.v ?? ""}<br>
         <b>تاريخ الفحص القادم:</b> ${nextCheck}<br>
-        <button class="print-btn" onclick="printCard('print-${shown}')">🖨️ طباعة تقرير الجهاز</button>
+        <button class="print-btn" onclick="printCard('print-${i}')">🖨️ طباعة تقرير الجهاز</button>
       </div>
     </div>`;
   });
 
-  countAll.innerText = `الإجمالي: ${total}`;
-  countPC.innerText = `كمبيوترات: ${pc}`;
-  countPrinter.innerText = `طابعات: ${printer}`;
-  countCar.innerText = `سيارات: ${car}`;
+  document.getElementById("countAll").innerText = `الإجمالي: ${total}`;
 
-  if(shown===0){
+  if(shown === 0){
     box.innerHTML = `<div class="no-results">❌ لا توجد أجهزة مطابقة لبحثك</div>`;
   }
 }
