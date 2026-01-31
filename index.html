@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>كشف أجهزة شركة الف</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  font-family: Tahoma, Arial;
+  background:#f4f6f8;
+  padding:15px;
+}
+.box{
+  background:#fff;
+  padding:30px;
+  max-width:1200px;
+  margin:auto;
+  border-radius:16px;
+  box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+/* ===== الشعار ===== */
+.logo{text-align:center;}
+.logo img{
+  width:120px;height:120px;
+  border-radius:50%;
+  border:3px solid #0d6efd;
+}
+.company-name{
+  color:#0d6efd;
+  font-weight:bold;
+  margin-top:10px;
+  font-size:18px;
+}
+h2{text-align:center;margin:25px 0;font-size:28px;}
+
+/* ===== البحث ===== */
+.search-box{
+  display:flex;
+  gap:10px;
+  margin-bottom:15px;
+}
+.search-box input{
+  flex:1;
+  padding:15px;
+  font-size:18px;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+.search-box button{
+  padding:15px 30px;
+  font-size:18px;
+  border-radius:10px;
+  background:#0d6efd;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+
+/* ===== أزرار التصنيفات ===== */
+.filters{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:25px;
+  justify-content:center;
+}
+.filters button{
+  padding:10px 18px;
+  border-radius:20px;
+  border:1px solid #0d6efd;
+  background:#fff;
+  color:#0d6efd;
+  cursor:pointer;
+  font-size:14px;
+}
+.filters button.active,
+.filters button:hover{
+  background:#0d6efd;
+  color:#fff;
+}
+
+/* ===== النتائج ===== */
+.result{margin-top:20px;}
+
+.card{
+  display:flex;
+  gap:30px;
+  border:1px solid #ddd;
+  border-radius:16px;
+  padding:20px;
+  margin-bottom:20px;
+  background:#fafafa;
+}
+.card-text{flex:2;line-height:1.9;font-size:16px;}
+.card-image{flex:1;}
+.card-image img{
+  width:100%;
+  max-width:340px;
+  border-radius:14px;
+  box-shadow:0 8px 20px rgba(0,0,0,.25);
+}
+
+/* ===== موبايل ===== */
+@media(max-width:768px){
+  .card{flex-direction:column;}
+  .search-box{flex-direction:column;}
+  .search-box button{width:100%;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <div class="logo">
+    <img src="assets/alef.jpg">
+    <div class="company-name">شركة الف لخدمات الدعاية والإعلام</div>
+  </div>
+
+  <h2>📋 كشف أجهزة الشركة</h2>
+
+  <!-- البحث -->
+  <div class="search-box">
+    <input id="search" placeholder="رقم الجهاز (اتركه فارغًا لعرض الكل)">
+    <button onclick="load()">بحث</button>
+  </div>
+
+  <!-- أزرار التصنيف -->
+  <div class="filters">
+    <button onclick="setType('')">الكل</button>
+    <button onclick="setType('كمبيوتر مكتبي')">كمبيوتر مكتبي</button>
+    <button onclick="setType('لابتوب')">لابتوب</button>
+    <button onclick="setType('طابعة')">طابعات</button>
+    <button onclick="setType('هاتف أرضي')">هاتف أرضي</button>
+    <button onclick="setType('موبايل')">موبايل</button>
+    <button onclick="setType('كاميرا')">كاميرات</button>
+    <button onclick="setType('سيارة')">سيارات</button>
+    <button onclick="setType('مكيف')">مكيفات</button>
+    <button onclick="setType('ساعة')">ساعات</button>
+    <button onclick="setType('ثلاجة')">ثلاجات</button>
+    <button onclick="setType('انترنت')">انترنت</button>
+  </div>
+
+  <div class="result" id="result"></div>
+
+</div>
+
+<script>
+const SHEET_ID = "1rwrsnvKALSUMlmtp_9KOVE03-65niHv2-tBcOGbfmk4";
+const SHEET_NAME = "كشف الأجهزة";
+let currentType = "";
+
+function setType(type){
+  currentType = type;
+  load();
+}
+
+/* تحويل رابط Drive إلى رابط صورة */
+function driveImage(url){
+  if(!url) return "";
+  const id = url.match(/[-\w]{25,}/);
+  if(!id) return "";
+  return "https://lh3.googleusercontent.com/d/" + id[0];
+}
+
+window.onload = load;
+
+async function load(){
+  const key = document.getElementById("search").value.trim();
+  const box = document.getElementById("result");
+  box.innerHTML = "جاري تحميل البيانات...";
+
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_NAME)}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.substring(47).slice(0,-2));
+  const rows = json.table.rows;
+
+  box.innerHTML = "";
+
+  rows.forEach(r=>{
+    const deviceNo = r.c[0]?.f ?? r.c[0]?.v ?? "";
+    const type = r.c[1]?.v ?? "";
+
+    if(key && !deviceNo.toString().includes(key)) return;
+    if(currentType && type !== currentType) return;
+
+    const img = driveImage(r.c[5]?.v);
+
+    box.innerHTML += `
+    <div class="card">
+      <div class="card-text">
+        <b>رقم الجهاز:</b> ${deviceNo}<br>
+        <b>النوع:</b> ${type}<br>
+        <b>الاسم:</b> ${r.c[2]?.v ?? ""}<br>
+        <b>الوصف:</b> ${r.c[3]?.v ?? ""}<br>
+        <b>المكان:</b> ${r.c[4]?.v ?? ""}<br>
+        <b>تاريخ آخر فحص:</b> ${r.c[6]?.f ?? ""}<br>
+        <b>تاريخ الفحص القادم:</b> ${r.c[7]?.f ?? ""}<br>
+        <b>الملاحظات:</b> ${r.c[8]?.v ?? ""}
+      </div>
+
+      <div class="card-image">
+        ${img ? `<img src="${img}">` : "<b>لا توجد صورة</b>"}
+      </div>
+    </div>`;
+  });
+}
+</script>
+
+</body>
+</html>
